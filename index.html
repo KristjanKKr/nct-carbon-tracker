@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>NCT – Nordic Carbon Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background:#fff;
+    font-family:'Inter',sans-serif;
+    color:#1a1a2e;
+    padding:20px;
+    width:100%;
+    overflow-x:hidden;
+  }
+
+  .header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:16px; padding-bottom:12px;
+    border-bottom:2px solid #1a1a2e;
+  }
+  .header h1 { font-size:20px; font-weight:900; letter-spacing:.04em; }
+  .header-sub { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:.1em; text-align:right; line-height:1.6; }
+
+  .filters {
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;
+    padding:12px 14px; background:#f7f8fa; border-radius:6px;
+    border:1px solid #e8eaee; align-items:flex-end;
+  }
+  .fg { display:flex; flex-direction:column; gap:2px; }
+  .fg label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#999; }
+  select {
+    background:#fff; border:1px solid #d0d0d0; color:#1a1a2e;
+    font-family:'Inter',sans-serif; font-size:11px;
+    padding:5px 8px; border-radius:3px; cursor:pointer; outline:none;
+    min-width:130px;
+  }
+  select:focus { border-color:#1a1a2e; }
+  .reset-btn {
+    background:#1a1a2e; color:#fff; border:none;
+    font-family:'Inter',sans-serif; font-size:10px; font-weight:700;
+    padding:6px 12px; border-radius:3px; cursor:pointer;
+  }
+  .reset-btn:hover { background:#2c3e6b; }
+
+  .stats-row { display:flex; gap:8px; margin-bottom:14px; }
+  .stat-chip { flex:1; background:#f7f8fa; border:1px solid #eee; border-radius:4px; padding:8px 10px; }
+  .stat-chip .sl { font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#bbb; margin-bottom:2px; }
+  .stat-chip .sv { font-size:17px; font-weight:900; color:#1a1a2e; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .stat-chip .ss { font-size:9px; color:#bbb; margin-top:1px; }
+
+  .main { display:flex; gap:20px; align-items:flex-start; }
+  .left-panel { flex:1; min-width:0; }
+  .right-panel { width:260px; flex-shrink:0; }
+
+  .section-label { font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#1a1a2e; margin-bottom:8px; }
+
+  .legend { display:flex; gap:14px; margin-bottom:10px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:#555; }
+  .leg-dot  { width:9px; height:9px; border-radius:50%; background:#1a1a2e; flex-shrink:0; }
+  .leg-dash { width:20px; height:0; border-top:2px dashed #5a7a45; flex-shrink:0; }
+  .leg-band { width:20px; height:8px; background:rgba(176,190,197,0.7); border-radius:2px; flex-shrink:0; }
+
+  .chart-wrap { position:relative; height:340px; margin-bottom:6px; }
+  canvas { display:block; width:100%; height:100%; }
+  .no-data { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:12px; color:#aaa; text-align:center; }
+  .src-note { font-size:9px; color:#ccc; text-align:right; }
+
+  .panel-title { font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#1a1a2e; margin-bottom:6px; }
+  .filter-info { font-size:10px; color:#aaa; margin-bottom:6px; }
+
+  .proj-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .proj-table thead th {
+    font-size:8px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.07em; color:#aaa;
+    border-bottom:2px solid #1a1a2e; padding:3px 5px 5px; text-align:left;
+  }
+  .proj-table thead th:last-child { text-align:right; }
+  .proj-table tbody tr { border-bottom:1px solid #f0f0f0; cursor:pointer; transition:background .1s; }
+  .proj-table tbody tr:nth-child(even) { background:#f9f9f9; }
+  .proj-table tbody tr:hover    { background:#eef2ff; }
+  .proj-table tbody tr.selected { background:#dde5ff; }
+  .proj-table tbody td { padding:6px 5px; color:#1a1a2e; }
+  .proj-table tbody td:last-child { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .overall-box { margin-top:18px; text-align:right; }
+  .overall-label { font-size:8px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#bbb; margin-bottom:4px; }
+  .overall-value { font-size:36px; font-weight:900; color:#1a1a2e; line-height:1; font-variant-numeric:tabular-nums; }
+  .overall-sub   { font-size:9px; color:#bbb; margin-top:3px; }
+  .overall-arrow { font-size:20px; color:#1a1a2e; margin-top:3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>NCT – NORDIC CARBON TRACKER</h1>
+  <div class="header-sub">CO₂ Reporting System<br>Nordic Office of Architecture</div>
+</div>
+
+<div class="filters">
+  <div class="fg"><label>Department</label><select id="fDept"><option value="all">All Departments</option></select></div>
+  <div class="fg"><label>Project Number</label><select id="fProjNo"><option value="all">All Project Numbers</option></select></div>
+  <div class="fg"><label>Project Name</label><select id="fProj"><option value="all">All Projects</option></select></div>
+  <div class="fg"><label>Country</label><select id="fCountry"><option value="all">All Countries</option></select></div>
+  <button class="reset-btn" id="resetBtn">↺ Reset</button>
+</div>
+
+<div class="stats-row">
+  <div class="stat-chip"><div class="sl">Submissions</div><div class="sv" id="statSubmissions">—</div><div class="ss">total rows</div></div>
+  <div class="stat-chip"><div class="sl">Projects</div><div class="sv" id="statProjects">—</div><div class="ss">unique proj. nos.</div></div>
+  <div class="stat-chip"><div class="sl">Date Range</div><div class="sv" id="statRange" style="font-size:11px;padding-top:2px">—</div><div class="ss">first → last</div></div>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="section-label">Monthly Project Progress — CO₂e / m²</div>
+    <div class="legend">
+      <div class="legend-item"><div class="leg-dot"></div> Avg CO₂e/m² across projects</div>
+      <div class="legend-item"><div class="leg-band"></div> ±25% error margin</div>
+      <div class="legend-item"><div class="leg-dash"></div> All-time average</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="myChart"></canvas>
+      <div class="no-data" id="noData">No data matches the current filters.</div>
+    </div>
+    <div class="src-note">Source: Nordic Office of Architecture · Carbon Reporting Database</div>
+  </div>
+
+  <div class="right-panel">
+    <div class="panel-title">Projects in Report</div>
+    <div class="filter-info" id="filterInfo"></div>
+    <table class="proj-table">
+      <thead><tr><th>Proj. No.</th><th>Name</th><th>Last<br>CO₂e/m²</th></tr></thead>
+      <tbody id="projTableBody"></tbody>
+    </table>
+    <div class="overall-box">
+      <div class="overall-label">Nordic Overall</div>
+      <div class="overall-value" id="overallVal">—</div>
+      <div class="overall-sub">Average kg CO₂e per m²</div>
+      <div class="overall-arrow">▲</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── DATA — update this when new submissions arrive ───────────────────────────
+const RAW = [
+  ["18.03.2025","Norway","Studio 5","1020607","Lilleakerveien 41",4553600,14800,"25%"],
+  ["18.03.2025","Norway","Helse","320104","Sikkerhetspost Valen Sjukehus",316800,1430,"25%"],
+  ["01.04.2025","Norway","Studio 5","1020607","Lilleakerveien 41",4566000,14799,"25%"],
+  ["25.04.2025","Norway","Helse","110000","SUS 2023",5987600,13852,"25%"],
+  ["05.05.2025","Norway","Helse","110000","SUS 2023",8176600,13851,"25%"],
+  ["06.05.2025","Norway","Helse","110000","SUS 2023",8162000,13851,"25%"],
+  ["26.05.2025","Norway","Studio 5","1020607","Lilleakerveien 41",4385600,14798.5,"25%"],
+  ["02.06.2025","Norway","Helse","110000","SUS 2023",7914400,13851.8,"25%"],
+  ["26.06.2025","Norway","Helse","110000","SUS 2023",7593600,14110.2,"25%"],
+  ["11.08.2025","Norway","Helse","110000","SUS 2023",7210200,14110.2,"25%"],
+  ["12.09.2025","Norway","Helse","110000","SUS 2023",6480300,14110.2,"25%"],
+  ["13.10.2025","Norway","Helse","110000","SUS 2023",6231000,14110.2,"25%"],
+  ["22.01.2026","Norway","Helse","3251003","Krokstad Sykehjem",1819800,0,"25%"],
+  ["26.01.2026","Norway","Helse","110000","SUS 2023",720800,14110.2,"25%"],
+  ["27.01.2026","Norway","Helse","110000","SUS 2023",6100500,14110.2,"25%"],
+  ["09.03.2026","Norway","Helse","110000","SUS 2023",7229900,14110.2,"25%"],
+  ["16.03.2026","Norway","Helse","3251003","Krokstad Sykehjem",1452500,10490,"25%"],
+  ["26.03.2026","Norway","Helse","3251003","Krokstad Sykehjem",1372800,10490,"25%"],
+  ["27.03.2026","Norway","Helse","110000","SUS 2023",6800800,14085.2,"25%"],
+  ["14.04.2026","Norway","Studio 3","325-1019","NRK - Normannsløkka",36356200,56526.6,"25%"],
+  ["15.04.2026","Norway","Studio 3","1020649","Arctic Arena (Nordland Idrettspark)",103576100,223855,"25%"],
+  ["21.04.2026","Norway","None","1020107-29","Avinor Hotellutvidelse BGO",2216100,3697,"25%"],
+  ["30.04.2026","Norway","Helse","110000","SUS 2023",7692900,14085.2,"25%"],
+];
+// ────────────────────────────────────────────────────────────────────────────
+
+function toTs(s){
+  if(!s) return NaN;
+  if(s.includes('.')) { const [d,m,y]=s.split('.'); return +new Date(+y,+m-1,+d); }
+  if(s.includes('/')) { const [d,m,y]=s.split('/'); return +new Date(+y,+m-1,+d); }
+  return +new Date(s);
+}
+function fmtDate(ts){ return new Date(ts).toLocaleDateString('no-NO',{month:'short',year:'numeric'}); }
+function fmtFull(ts){ return new Date(ts).toLocaleDateString('no-NO',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmt2(v)    { return v.toLocaleString('no-NO',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+const rawData=RAW.map(r=>({
+  dateStr:r[0],ts:toTs(r[0]),country:r[1],dept:r[2],projNo:r[3],projName:r[4],
+  bta:parseFloat(r[5])||0,co2:parseFloat(r[6])||0
+})).filter(r=>!isNaN(r.ts));
+
+const projNoNames={};
+rawData.forEach(r=>{ if(!projNoNames[r.projNo]) projNoNames[r.projNo]=r.projName; });
+
+function mergeByProjNoAndDate(rows){
+  const map={};
+  rows.forEach(r=>{
+    const key=`${r.projNo}||${r.ts}`;
+    if(!map[key]) map[key]={...r,bta:0,co2:0};
+    map[key].bta+=r.bta; map[key].co2+=r.co2;
+  });
+  return Object.values(map).map(r=>({...r,intensity:r.co2>0?r.bta/r.co2:0})).sort((a,b)=>a.ts-b.ts);
+}
+
+function populateFilters(){
+  function setOpts(id,vals){
+    const sel=document.getElementById(id);
+    while(sel.options.length>1) sel.remove(1);
+    vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});
+  }
+  setOpts('fDept',   [...new Set(rawData.map(d=>d.dept))].sort());
+  setOpts('fProjNo', [...new Set(rawData.map(d=>d.projNo))].sort());
+  setOpts('fProj',   [...new Set(rawData.map(d=>d.projName))].sort());
+  setOpts('fCountry',[...new Set(rawData.map(d=>d.country))].sort());
+}
+
+let selectedProjNo=null,myChart=null;
+
+function getFilteredRaw(){
+  const dept=document.getElementById('fDept').value;
+  const projNo=document.getElementById('fProjNo').value;
+  const proj=document.getElementById('fProj').value;
+  const country=document.getElementById('fCountry').value;
+  return rawData.filter(r=>
+    (dept==='all'||r.dept===dept)&&(projNo==='all'||r.projNo===projNo)&&
+    (proj==='all'||r.projName===proj)&&(country==='all'||r.country===country)&&
+    (selectedProjNo===null||r.projNo===selectedProjNo)
+  );
+}
+
+function refresh(){
+  const filteredRaw=getFilteredRaw();
+  const merged=mergeByProjNoAndDate(filteredRaw);
+  const allTs=[...new Set(rawData.map(d=>d.ts))].sort((a,b)=>a-b);
+
+  document.getElementById('statSubmissions').textContent=filteredRaw.length;
+  document.getElementById('statProjects').textContent=[...new Set(filteredRaw.map(d=>d.projNo))].length;
+  if(allTs.length>=2)
+    document.getElementById('statRange').textContent=`${fmtFull(allTs[0])} → ${fmtFull(allTs[allTs.length-1])}`;
+
+  const chartTs=[...new Set(merged.map(d=>d.ts))].sort((a,b)=>a-b);
+  function avgAtTs(ts){
+    const rows=merged.filter(d=>d.ts===ts&&d.intensity>0);
+    return rows.length?rows.reduce((s,d)=>s+d.intensity,0)/rows.length:null;
+  }
+  const tsArr=chartTs.filter(ts=>avgAtTs(ts)!==null);
+  const yArr=tsArr.map(ts=>avgAtTs(ts));
+  const yHigh=yArr.map(v=>v*1.25),yLow=yArr.map(v=>v*0.75);
+  const allTimeAvg=yArr.length?yArr.reduce((s,v)=>s+v,0)/yArr.length:0;
+
+  document.getElementById('noData').style.display=tsArr.length?'none':'block';
+
+  const lastByProjNo={};
+  merged.filter(d=>d.intensity>0).forEach(d=>{
+    if(!lastByProjNo[d.projNo]||d.ts>lastByProjNo[d.projNo].ts) lastByProjNo[d.projNo]=d;
+  });
+  const projRows=Object.values(lastByProjNo).sort((a,b)=>String(a.projNo).localeCompare(String(b.projNo)));
+
+  const tbody=document.getElementById('projTableBody');
+  tbody.innerHTML='';
+  projRows.forEach(d=>{
+    const tr=document.createElement('tr');
+    if(selectedProjNo===d.projNo) tr.classList.add('selected');
+    tr.innerHTML=`<td>${d.projNo}</td><td>${projNoNames[d.projNo]||d.projName}</td><td>${fmt2(d.intensity)}</td>`;
+    tr.addEventListener('click',()=>{selectedProjNo=selectedProjNo===d.projNo?null:d.projNo;refresh();});
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('filterInfo').textContent=
+    `${projRows.length} project${projRows.length!==1?'s':''} — click row to isolate`;
+  document.getElementById('overallVal').textContent=
+    projRows.length?fmt2(projRows.reduce((s,d)=>s+d.intensity,0)/projRows.length):'—';
+
+  if(myChart){myChart.destroy();myChart=null;}
+  if(!tsArr.length) return;
+
+  const ctx=document.getElementById('myChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,340);
+  grad.addColorStop(0,'rgba(26,26,46,0.22)');grad.addColorStop(1,'rgba(26,26,46,0.01)');
+  const gradBand=ctx.createLinearGradient(0,0,0,340);
+  gradBand.addColorStop(0,'rgba(176,190,197,0.5)');gradBand.addColorStop(1,'rgba(176,190,197,0.03)');
+  const pad=1000*60*60*24*20;
+
+  myChart=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'_high',data:tsArr.map((ts,i)=>({x:ts,y:yHigh[i]})),borderColor:'rgba(176,190,197,0.6)',backgroundColor:gradBand,borderWidth:1,pointRadius:0,showLine:true,fill:'+1',tension:0.4,order:4},
+      {label:'_low', data:tsArr.map((ts,i)=>({x:ts,y:yLow[i]})), borderColor:'rgba(176,190,197,0.6)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,showLine:true,fill:false,tension:0.4,order:4},
+      {label:'Average',data:[{x:tsArr[0]-pad,y:allTimeAvg},{x:tsArr[tsArr.length-1]+pad,y:allTimeAvg}],borderColor:'#5a7a45',borderWidth:1.5,borderDash:[6,5],pointRadius:0,showLine:true,fill:false,order:2},
+      {label:'CO₂e/m²',data:tsArr.map((ts,i)=>({x:ts,y:yArr[i]})),borderColor:'#1a1a2e',backgroundColor:grad,borderWidth:2,pointBackgroundColor:'#1a1a2e',pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:6,showLine:true,fill:true,tension:0.4,order:1},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#fff',borderColor:'#ddd',borderWidth:1,
+          titleColor:'#1a1a2e',bodyColor:'#444',
+          titleFont:{family:'Inter',size:11,weight:'700'},
+          bodyFont:{family:'Inter',size:10},padding:10,
+          filter:item=>!item.dataset.label.startsWith('_'),
+          callbacks:{
+            title:items=>fmtDate(items[0].parsed.x),
+            label:item=>item.dataset.label==='Average'
+              ?`  Avg: ${fmt2(allTimeAvg)} kg/m²`
+              :`  CO₂e/m²: ${fmt2(item.parsed.y)} kg/m²`
+          }
+        }
+      },
+      scales:{
+        x:{type:'linear',min:tsArr[0]-pad,max:tsArr[tsArr.length-1]+pad,
+          grid:{color:'#f0f0f0'},border:{color:'#ddd'},
+          ticks:{color:'#999',font:{family:'Inter',size:10},maxTicksLimit:8,callback:v=>fmtDate(v)}},
+        y:{beginAtZero:true,grid:{color:'#f0f0f0'},border:{color:'#ddd'},
+          ticks:{color:'#999',font:{family:'Inter',size:10}},
+          title:{display:true,text:'kg CO₂e / m²',color:'#aaa',font:{family:'Inter',size:10}}}
+      }
+    }
+  });
+}
+
+['fDept','fProjNo','fProj','fCountry'].forEach(id=>
+  document.getElementById(id).addEventListener('change',()=>{selectedProjNo=null;refresh();})
+);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  ['fDept','fProjNo','fProj','fCountry'].forEach(id=>document.getElementById(id).value='all');
+  selectedProjNo=null;refresh();
+});
+
+populateFilters();
+refresh();
+</script>
+</body>
+</html>
