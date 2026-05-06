@@ -4,20 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!-- Allow SharePoint and other sites to embed this page in an iframe -->
+<meta http-equiv="X-Frame-Options" content="ALLOWALL">
 <title>NCT – Nordic Carbon Tracker</title>
+<!-- All resources loaded over https for GitHub Pages compatibility -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
     background:#fff;
-    font-family:'Inter',sans-serif;
+    font-family:'Inter', sans-serif;
     color:#1a1a2e;
     padding:20px;
     width:100%;
     overflow-x:hidden;
   }
 
+  /* ── Header ── */
   .header {
     display:flex; justify-content:space-between; align-items:center;
     margin-bottom:16px; padding-bottom:12px;
@@ -26,6 +32,7 @@
   .header h1 { font-size:20px; font-weight:900; letter-spacing:.04em; }
   .header-sub { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:.1em; text-align:right; line-height:1.6; }
 
+  /* ── Filters ── */
   .filters {
     display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;
     padding:12px 14px; background:#f7f8fa; border-radius:6px;
@@ -35,24 +42,26 @@
   .fg label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#999; }
   select {
     background:#fff; border:1px solid #d0d0d0; color:#1a1a2e;
-    font-family:'Inter',sans-serif; font-size:11px;
+    font-family:'Inter', sans-serif; font-size:11px;
     padding:5px 8px; border-radius:3px; cursor:pointer; outline:none;
     min-width:130px;
   }
   select:focus { border-color:#1a1a2e; }
   .reset-btn {
     background:#1a1a2e; color:#fff; border:none;
-    font-family:'Inter',sans-serif; font-size:10px; font-weight:700;
+    font-family:'Inter', sans-serif; font-size:10px; font-weight:700;
     padding:6px 12px; border-radius:3px; cursor:pointer;
   }
   .reset-btn:hover { background:#2c3e6b; }
 
+  /* ── Stats ── */
   .stats-row { display:flex; gap:8px; margin-bottom:14px; }
   .stat-chip { flex:1; background:#f7f8fa; border:1px solid #eee; border-radius:4px; padding:8px 10px; }
   .stat-chip .sl { font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#bbb; margin-bottom:2px; }
   .stat-chip .sv { font-size:17px; font-weight:900; color:#1a1a2e; font-variant-numeric:tabular-nums; line-height:1.1; }
   .stat-chip .ss { font-size:9px; color:#bbb; margin-top:1px; }
 
+  /* ── Main layout ── */
   .main { display:flex; gap:20px; align-items:flex-start; }
   .left-panel { flex:1; min-width:0; }
   .right-panel { width:260px; flex-shrink:0; }
@@ -65,11 +74,13 @@
   .leg-dash { width:20px; height:0; border-top:2px dashed #5a7a45; flex-shrink:0; }
   .leg-band { width:20px; height:8px; background:rgba(176,190,197,0.7); border-radius:2px; flex-shrink:0; }
 
+  /* ── Chart ── */
   .chart-wrap { position:relative; height:340px; margin-bottom:6px; }
   canvas { display:block; width:100%; height:100%; }
   .no-data { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:12px; color:#aaa; text-align:center; }
   .src-note { font-size:9px; color:#ccc; text-align:right; }
 
+  /* ── Right panel ── */
   .panel-title { font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#1a1a2e; margin-bottom:6px; }
   .filter-info { font-size:10px; color:#aaa; margin-bottom:6px; }
 
@@ -87,6 +98,7 @@
   .proj-table tbody td { padding:6px 5px; color:#1a1a2e; }
   .proj-table tbody td:last-child { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
 
+  /* ── Overall ── */
   .overall-box { margin-top:18px; text-align:right; }
   .overall-label { font-size:8px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#bbb; margin-bottom:4px; }
   .overall-value { font-size:36px; font-weight:900; color:#1a1a2e; line-height:1; font-variant-numeric:tabular-nums; }
@@ -146,9 +158,11 @@
   </div>
 </div>
 
+<!-- Chart.js loaded over https — required for GitHub Pages -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-// ── DATA — update this when new submissions arrive ───────────────────────────
+// ── DATA — paste new CSV rows here when submissions arrive ───────────────────
+// Format: ["DD.MM.YYYY", "Country", "Department", "ProjNo", "Project Name", BTA, CO2e, "margin%"]
 const RAW = [
   ["18.03.2025","Norway","Studio 5","1020607","Lilleakerveien 41",4553600,14800,"25%"],
   ["18.03.2025","Norway","Helse","320104","Sikkerhetspost Valen Sjukehus",316800,1430,"25%"],
@@ -186,9 +200,9 @@ function fmtDate(ts){ return new Date(ts).toLocaleDateString('no-NO',{month:'sho
 function fmtFull(ts){ return new Date(ts).toLocaleDateString('no-NO',{day:'2-digit',month:'short',year:'numeric'}); }
 function fmt2(v)    { return v.toLocaleString('no-NO',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-const rawData=RAW.map(r=>({
-  dateStr:r[0],ts:toTs(r[0]),country:r[1],dept:r[2],projNo:r[3],projName:r[4],
-  bta:parseFloat(r[5])||0,co2:parseFloat(r[6])||0
+const rawData = RAW.map(r=>({
+  dateStr:r[0], ts:toTs(r[0]), country:r[1], dept:r[2], projNo:r[3], projName:r[4],
+  bta:parseFloat(r[5])||0, co2:parseFloat(r[6])||0
 })).filter(r=>!isNaN(r.ts));
 
 const projNoNames={};
@@ -201,7 +215,9 @@ function mergeByProjNoAndDate(rows){
     if(!map[key]) map[key]={...r,bta:0,co2:0};
     map[key].bta+=r.bta; map[key].co2+=r.co2;
   });
-  return Object.values(map).map(r=>({...r,intensity:r.co2>0?r.bta/r.co2:0})).sort((a,b)=>a.ts-b.ts);
+  return Object.values(map).map(r=>({
+    ...r, intensity:r.co2>0?r.bta/r.co2:0
+  })).sort((a,b)=>a.ts-b.ts);
 }
 
 function populateFilters(){
@@ -216,7 +232,7 @@ function populateFilters(){
   setOpts('fCountry',[...new Set(rawData.map(d=>d.country))].sort());
 }
 
-let selectedProjNo=null,myChart=null;
+let selectedProjNo=null, myChart=null;
 
 function getFilteredRaw(){
   const dept=document.getElementById('fDept').value;
@@ -224,8 +240,10 @@ function getFilteredRaw(){
   const proj=document.getElementById('fProj').value;
   const country=document.getElementById('fCountry').value;
   return rawData.filter(r=>
-    (dept==='all'||r.dept===dept)&&(projNo==='all'||r.projNo===projNo)&&
-    (proj==='all'||r.projName===proj)&&(country==='all'||r.country===country)&&
+    (dept==='all'||r.dept===dept)&&
+    (projNo==='all'||r.projNo===projNo)&&
+    (proj==='all'||r.projName===proj)&&
+    (country==='all'||r.country===country)&&
     (selectedProjNo===null||r.projNo===selectedProjNo)
   );
 }
@@ -238,7 +256,8 @@ function refresh(){
   document.getElementById('statSubmissions').textContent=filteredRaw.length;
   document.getElementById('statProjects').textContent=[...new Set(filteredRaw.map(d=>d.projNo))].length;
   if(allTs.length>=2)
-    document.getElementById('statRange').textContent=`${fmtFull(allTs[0])} → ${fmtFull(allTs[allTs.length-1])}`;
+    document.getElementById('statRange').textContent=
+      `${fmtFull(allTs[0])} → ${fmtFull(allTs[allTs.length-1])}`;
 
   const chartTs=[...new Set(merged.map(d=>d.ts))].sort((a,b)=>a-b);
   function avgAtTs(ts){
@@ -247,7 +266,7 @@ function refresh(){
   }
   const tsArr=chartTs.filter(ts=>avgAtTs(ts)!==null);
   const yArr=tsArr.map(ts=>avgAtTs(ts));
-  const yHigh=yArr.map(v=>v*1.25),yLow=yArr.map(v=>v*0.75);
+  const yHigh=yArr.map(v=>v*1.25), yLow=yArr.map(v=>v*0.75);
   const allTimeAvg=yArr.length?yArr.reduce((s,v)=>s+v,0)/yArr.length:0;
 
   document.getElementById('noData').style.display=tsArr.length?'none':'block';
@@ -256,7 +275,8 @@ function refresh(){
   merged.filter(d=>d.intensity>0).forEach(d=>{
     if(!lastByProjNo[d.projNo]||d.ts>lastByProjNo[d.projNo].ts) lastByProjNo[d.projNo]=d;
   });
-  const projRows=Object.values(lastByProjNo).sort((a,b)=>String(a.projNo).localeCompare(String(b.projNo)));
+  const projRows=Object.values(lastByProjNo)
+    .sort((a,b)=>String(a.projNo).localeCompare(String(b.projNo)));
 
   const tbody=document.getElementById('projTableBody');
   tbody.innerHTML='';
@@ -264,7 +284,7 @@ function refresh(){
     const tr=document.createElement('tr');
     if(selectedProjNo===d.projNo) tr.classList.add('selected');
     tr.innerHTML=`<td>${d.projNo}</td><td>${projNoNames[d.projNo]||d.projName}</td><td>${fmt2(d.intensity)}</td>`;
-    tr.addEventListener('click',()=>{selectedProjNo=selectedProjNo===d.projNo?null:d.projNo;refresh();});
+    tr.addEventListener('click',()=>{ selectedProjNo=selectedProjNo===d.projNo?null:d.projNo; refresh(); });
     tbody.appendChild(tr);
   });
 
@@ -273,14 +293,14 @@ function refresh(){
   document.getElementById('overallVal').textContent=
     projRows.length?fmt2(projRows.reduce((s,d)=>s+d.intensity,0)/projRows.length):'—';
 
-  if(myChart){myChart.destroy();myChart=null;}
+  if(myChart){ myChart.destroy(); myChart=null; }
   if(!tsArr.length) return;
 
   const ctx=document.getElementById('myChart').getContext('2d');
   const grad=ctx.createLinearGradient(0,0,0,340);
-  grad.addColorStop(0,'rgba(26,26,46,0.22)');grad.addColorStop(1,'rgba(26,26,46,0.01)');
+  grad.addColorStop(0,'rgba(26,26,46,0.22)'); grad.addColorStop(1,'rgba(26,26,46,0.01)');
   const gradBand=ctx.createLinearGradient(0,0,0,340);
-  gradBand.addColorStop(0,'rgba(176,190,197,0.5)');gradBand.addColorStop(1,'rgba(176,190,197,0.03)');
+  gradBand.addColorStop(0,'rgba(176,190,197,0.5)'); gradBand.addColorStop(1,'rgba(176,190,197,0.03)');
   const pad=1000*60*60*24*20;
 
   myChart=new Chart(ctx,{
@@ -292,7 +312,7 @@ function refresh(){
       {label:'CO₂e/m²',data:tsArr.map((ts,i)=>({x:ts,y:yArr[i]})),borderColor:'#1a1a2e',backgroundColor:grad,borderWidth:2,pointBackgroundColor:'#1a1a2e',pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:6,showLine:true,fill:true,tension:0.4,order:1},
     ]},
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:false},
@@ -323,11 +343,11 @@ function refresh(){
 }
 
 ['fDept','fProjNo','fProj','fCountry'].forEach(id=>
-  document.getElementById(id).addEventListener('change',()=>{selectedProjNo=null;refresh();})
+  document.getElementById(id).addEventListener('change',()=>{ selectedProjNo=null; refresh(); })
 );
 document.getElementById('resetBtn').addEventListener('click',()=>{
   ['fDept','fProjNo','fProj','fCountry'].forEach(id=>document.getElementById(id).value='all');
-  selectedProjNo=null;refresh();
+  selectedProjNo=null; refresh();
 });
 
 populateFilters();
